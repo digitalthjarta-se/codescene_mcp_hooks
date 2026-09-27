@@ -1,0 +1,9 @@
+{
+  "name": "code-health-gate",
+  "description": "Stops Claude Code from finishing while CodeScene Code Health is lower than before your changes. Needs the CodeScene CLI (cs).",
+  "version": "1.0.0",
+  "author": { "name": "Digitalt Hjärta" },
+  "homepage": "https://github.com/digitalthjarta-se/codescene_mcp_hooks",
+  "repository": "https://github.com/digitalthjarta-se/codescene_mcp_hooks",
+  "keywords": ["codescene", "code-health", "hooks", "quality-gate"]
+}

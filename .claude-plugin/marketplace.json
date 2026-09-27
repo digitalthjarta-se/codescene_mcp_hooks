@@ -1,0 +1,16 @@
+{
+  "name": "digitalthjarta",
+  "description": "Team tooling for CodeScene Code Health in AI coding agents.",
+  "owner": {
+    "name": "Digitalt Hjärta"
+  },
+  "plugins": [
+    {
+      "name": "code-health-gate",
+      "source": "./plugin",
+      "description": "Stops Claude Code from finishing while CodeScene Code Health is lower than before your changes.",
+      "version": "1.0.0",
+      "category": "code-quality"
+    }
+  ]
+}

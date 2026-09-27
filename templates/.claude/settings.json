@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/code-health-gate.sh claude",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

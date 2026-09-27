@@ -1,0 +1,29 @@
+name: "Copilot Setup Steps"
+
+# Runs before GitHub Copilot cloud agent starts working in this repo.
+# Installs the CodeScene CLI (cs) so the Code Health gate hook can run.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job MUST be called copilot-setup-steps, or Copilot won't pick it up.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install CodeScene CLI
+        run: |
+          curl -fsSL https://downloads.codescene.io/enterprise/cli/install-cs-tool.sh | sh -s -- -y
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Check cs
+        run: cs version

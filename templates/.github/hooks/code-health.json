@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "agentStop": [
+      {
+        "type": "command",
+        "bash": "bash .agents/hooks/code-health-gate.sh copilot",
+        "timeoutSec": 120
+      }
+    ]
+  }
+}

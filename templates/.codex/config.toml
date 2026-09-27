@@ -1,0 +1,3 @@
+[mcp_servers.codescene]
+command = "npx"
+args = ["-y", "@codescene/codehealth-mcp"]

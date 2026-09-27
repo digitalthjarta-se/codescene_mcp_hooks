@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "codescene": {
+      "type": "local",
+      "command": "npx",
+      "args": ["-y", "@codescene/codehealth-mcp"],
+      "env": {
+        "CS_ACCESS_TOKEN": "$COPILOT_MCP_CS_ACCESS_TOKEN",
+        "CS_DISABLE_VERSION_CHECK": "1"
+      },
+      "tools": [
+        "code_health_score",
+        "code_health_review",
+        "pre_commit_code_health_safeguard",
+        "analyze_change_set",
+        "explain_code_health"
+      ]
+    }
+  }
+}

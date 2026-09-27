@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "stop": [
+      {
+        "command": "bash .agents/hooks/code-health-gate.sh cursor",
+        "loop_limit": 3
+      }
+    ]
+  }
+}
