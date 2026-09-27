@@ -35,7 +35,9 @@ t "cs failure warns, does not block"        fail   claude  '{}' 1 -
 t "retry guard: stop_hook_active"           array  claude  '{"stop_hook_active":true}' 0 EMPTY
 t "Cursor running the Claude config: quiet" array  claude  '{"loop_count":0}' 0 EMPTY
 t "Grok running the Cursor config: quiet"   array  cursor  '{}' 0 EMPTY GROK_HOOK_EVENT=stop
-t "Grok running the Claude config: blocks"  array  claude  '{}' 2 - GROK_HOOK_EVENT=stop
+t "Grok running the Claude config: blocks"  array  claude  '{"stopHookActive":false,"reason":"end_turn"}' 2 - GROK_HOOK_EVENT=stop
+t "Grok retry guard: stopHookActive"        array  claude  '{"stopHookActive":true,"reason":"end_turn"}' 0 EMPTY GROK_HOOK_EVENT=stop
+t "Grok shutdown stop: quiet"               array  claude  '{"stopHookActive":false,"reason":"shutdown"}' 0 EMPTY GROK_HOOK_EVENT=stop
 t "missing cs warns, does not block"        array  claude  '{}' 1 - PATH=/usr/bin:/bin
 if cmp -s "$GATE" "$KIT/plugin/scripts/code-health-gate.sh"; then pass=$((pass+1)); echo "  ok    plugin copy of the script is identical"
 else fail=$((fail+1)); echo "  FAIL  plugin/scripts/code-health-gate.sh differs from .agents/hooks/"; fi

@@ -4,9 +4,9 @@ input=$(cat); agent="${1:-claude}"; PATH="$HOME/.local/bin:$PATH"
 { command -v cs && command -v jq; } >/dev/null || { echo "gate skipped: needs cs and jq" >&2; exit 1; }
 # Grok Build runs the Claude config itself; skip its import of the Cursor config
 [ -n "${GROK_HOOK_EVENT:-}" ] && [ "$agent" != claude ] && exit 0
-# one forced retry per stop; skip Cursor's import of the Claude config (native Cursor hook runs)
-jq -e --arg a "$agent" '.stop_hook_active == true or (has("loop_count") and $a != "cursor")' \
-  >/dev/null 2>&1 <<<"$input" && exit 0
+# skip: forced retry (one per stop), Grok's shutdown stop, Cursor importing the Claude config
+jq -e --arg a "$agent" '.stop_hook_active == true or .stopHookActive == true or .reason == "shutdown"
+  or (has("loop_count") and $a != "cursor")' >/dev/null 2>&1 <<<"$input" && exit 0
 json=$(cs delta --output-format=json 2>/dev/null) ||
   { echo "gate skipped: cs delta failed (signed in?)" >&2; exit 1; }
 degraded=$(jq -r '(if type == "object" then .results else . end)[]

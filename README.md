@@ -13,14 +13,14 @@ One script serves every agent. Each agent gets a small config that points to it:
 | Agent | Hook config (committed) | Event | Tested |
 |---|---|---|---|
 | Claude Code | `.claude/settings.json` | `Stop` | Live, 2.1.283 (repo config and plugin) |
-| Grok Build | reads `.claude/settings.json` | `Stop` | Live, 1.0.41 (hook fires and blocks) |
+| Grok Build | reads `.claude/settings.json` | `Stop` | Live, 1.0.41 |
 | GitHub Copilot CLI | `.github/hooks/code-health.json` | `agentStop` | Live, 1.0.89 |
 | VS Code (Copilot agent) | reads `.github/hooks/*.json` | `agentStop` = `Stop` | Checked in VS Code source |
 | Copilot cloud agent | `.github/hooks/code-health.json` | `agentStop` | Docs only |
 | Codex | `.codex/hooks.json` | `Stop` | Checked in Codex source |
 | Cursor | `.cursor/hooks.json` | `stop` | Docs only |
 
-"Live" means a real agent session was blocked, refactored and finished, on macOS with the real `cs` for Copilot CLI and Grok.
+"Live" means a real agent session was blocked, refactored and finished. Copilot CLI and Grok Build ran on macOS with the real `cs` (both took a file from 8.28 back to 10.0).
 
 ## Quick start
 
@@ -113,7 +113,7 @@ Most agents only run repo hooks and repo MCP servers in a folder you have truste
 ## Notes per agent
 
 - **Claude Code**: `Stop` hook, exit 2 sends the reason back to Claude. Default timeout 600 s; the config sets 120 s.
-- **Grok Build**: runs the project `.claude/settings.json` hooks (with `CLAUDE_PROJECT_DIR` set), so it needs no config of its own. It also imports `.cursor/hooks.json`; the script ignores that second call. Grok's default hook timeout is 5 s, which is why the Claude config sets `"timeout": 120`. Grok fires `Stop` again at shutdown. Hooks from Claude Code plugins don't run in Grok yet ([xai-org/plugin-marketplace#236](https://github.com/xai-org/plugin-marketplace/issues/236)), so use the repo config, not the plugin.
+- **Grok Build**: runs the project `.claude/settings.json` hooks (with `CLAUDE_PROJECT_DIR` set), so it needs no config of its own. It also imports `.cursor/hooks.json`; the script ignores that second call. Grok's default hook timeout is 5 s, which is why the Claude config sets `"timeout": 120`. Grok fires `Stop` again at shutdown and marks the retry with `stopHookActive` (camelCase); the script handles both. Hooks from Claude Code plugins don't run in Grok yet ([xai-org/plugin-marketplace#236](https://github.com/xai-org/plugin-marketplace/issues/236)), so use the repo config, not the plugin.
 - **Copilot CLI**: `agentStop` with JSON `{"decision":"block","reason":...}`. Needs a trusted folder (above). Default timeout 30 s; the config sets 120 s.
 - **VS Code**: reads `.github/hooks/*.json`, maps `agentStop` to `Stop`, and reads the `hookSpecificOutput` that the script prints in Copilot mode. If `chat.useClaudeHooks` is on, it also runs the Claude config, so the gate runs twice per stop (same result, just slower).
 - **Codex**: `Stop` in `.codex/hooks.json`, run through your login shell in the session's working directory, hence the `git rev-parse` path. Exit 2 with a reason continues the session.
@@ -167,7 +167,7 @@ Use the plugin **or** the repo hook, not both (the gate would run twice). The pl
 
 ## How the gate decides
 
-1. Skip if this is already the forced retry (`stop_hook_active`), or the call is a duplicate import (Cursor or Grok running another agent's config).
+1. Skip if this is already the forced retry (`stop_hook_active`, or `stopHookActive` in Grok), Grok's shutdown stop, or a duplicate import (Cursor or Grok running another agent's config).
 2. Run `cs delta --output-format=json`: all uncommitted changes against `HEAD`, including staged and untracked files. The MCP tool `pre_commit_code_health_safeguard` runs the same command.
 3. Block if a changed file's score dropped, or a new file scores below 10. (CodeScene's own git pre-commit hook blocks every new file; that's too strict for a stop hook.)
 4. Send the reason back in the format each agent expects: exit 2 with the message on stderr (Claude Code, Codex, Grok), JSON `decision: block` (Copilot, VS Code), or `followup_message` (Cursor).
@@ -187,7 +187,7 @@ If `cs` or `jq` is missing, or `cs` can't sign in, the hook prints "gate skipped
 ## Testing the script
 
 ```bash
-bash test/run-tests.sh   # fake cs, no account needed: 14 cases, every agent mode
+bash test/run-tests.sh   # fake cs, no account needed: 16 cases, every agent mode
 ```
 
 ## Files
