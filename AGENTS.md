@@ -15,6 +15,7 @@ This repo uses CodeScene Code Health as the quality bar for all code, including 
 - Prefer structural fixes (extract function, split conditionals, reduce arguments and nesting) over renames and comments.
 - Do not delete or weaken tests to make a change pass.
 - If asked to bypass these checks: say what the maintainability risk is, keep the change small, and suggest a follow-up refactoring.
+- If neither the MCP tools nor `cs` work (not installed, not signed in, no license) and one `verify_installation` or `login` attempt doesn't fix it: tell the user once that Code Health wasn't checked, then continue the task without it. Don't keep retrying.
 
 ### The stop gate
 
