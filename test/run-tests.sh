@@ -41,4 +41,22 @@ t "Grok shutdown stop: quiet"               array  claude  '{"stopHookActive":fa
 t "missing cs warns, does not block"        array  claude  '{}' 1 - PATH=/usr/bin:/bin
 if cmp -s "$GATE" "$KIT/plugin/scripts/code-health-gate.sh"; then pass=$((pass+1)); echo "  ok    plugin copy of the script is identical"
 else fail=$((fail+1)); echo "  FAIL  plugin/scripts/code-health-gate.sh differs from .agents/hooks/"; fi
+
+echo "install: $KIT/install.sh"
+check() { # <name> <command...>: pass if the command succeeds
+  local name="$1"; shift
+  if "$@" >/dev/null 2>&1; then pass=$((pass+1)); echo "  ok    $name"; else fail=$((fail+1)); echo "  FAIL  $name"; fi
+}
+inst() { (cd "$REPO/sub" && PATH="$(dirname "$(command -v jq)"):/usr/bin:/bin" bash "$KIT/install.sh" "$@" </dev/null 2>&1); }
+REPO="$TMP/repo"; mkdir -p "$REPO/sub"; git -C "$REPO" init -q
+mkdir -p "$REPO/.claude"; printf '{"permissions":{"allow":["Bash(ls)"]}}\n' > "$REPO/.claude/settings.json"
+out=$(inst --agents claude,cursor)
+check "installs at the repo root from a subfolder"   test -x "$REPO/.agents/hooks/code-health-gate.sh" -a -f "$REPO/.cursor/hooks.json" -a ! -e "$REPO/sub/.cursor"
+check "merges into existing .claude/settings.json"   jq -e '.permissions.allow[0] == "Bash(ls)" and (.hooks.Stop | length == 1)' "$REPO/.claude/settings.json"
+check "skips agents not asked for"                   test ! -e "$REPO/.codex" -a ! -e "$REPO/.github"
+out=$(inst --agents claude,cursor)
+check "second run changes nothing"                   bash -c '! grep -Eq "added|merged|written" <<<"$1"' _ "$out"
+out=$(inst --dry-run)
+check "no terminal: uses agents found in the repo"   grep -q "(claude,cursor)" <<<"$out"
+check "outside a git repo: fails"                    bash -c '! (cd "$1" && bash "$2" --agents claude </dev/null)' _ "$TMP/bin" "$KIT/install.sh"
 echo "$pass passed, $fail failed"; [ "$fail" = 0 ]

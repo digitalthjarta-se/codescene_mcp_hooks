@@ -29,18 +29,26 @@ One script serves every agent. Each agent gets a small config that points to it:
 curl -fsSL https://downloads.codescene.io/enterprise/cli/install-cs-tool.sh | sh
 cs auth login
 
-# 2. Once per repo: add hooks, MCP config and AGENTS.md
-git clone git@github.com:digitalthjarta-se/codescene_mcp_hooks.git
-./codescene_mcp_hooks/install.sh ~/Projects/my-repo
-cd ~/Projects/my-repo && git add -A && git commit -m "Add CodeScene Code Health gate"
+# 2. Once per repo: add hooks, MCP config and AGENTS.md (asks which agents)
+cd ~/Projects/my-repo
+curl -fsSL https://raw.githubusercontent.com/digitalthjarta-se/codescene_mcp_hooks/main/install.sh | bash
+git add -A && git commit -m "Add CodeScene Code Health gate"
 
 # 3. Trust the repo in your agent (see "Trust" below), then test:
 #    make a function worse, ask the agent to finish, watch it get sent back.
 ```
 
-`install.sh` never overwrites. It merges into existing `.claude/settings.json`, `.mcp.json` and friends, appends a marked section to an existing `AGENTS.md`, and skips JSON files with comments (it tells you which). Options: `--agents claude,codex,copilot,cursor,vscode`, `--skip-mcp`, `--skip-agents-md`, `--dry-run`. Run it again to update the script.
+`install.sh` installs into the git repository you run it from (any subfolder works). It lists the agents and preselects the ones it finds in the repo (`.claude/`, `.cursor/`, ...) or on your `PATH`; type numbers to toggle, Enter to install. It never overwrites: it merges into existing `.claude/settings.json`, `.mcp.json` and friends, appends a marked section to an existing `AGENTS.md`, and skips JSON files with comments (it tells you which). Run it again to update the gate script.
 
-Requirements: `bash`, `git`, `jq` (built into macOS 15+, else `brew install jq`), `cs`, and Node.js 18+ for the MCP server.
+Options go after `bash -s --`, for example to skip the question in a script or CI:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/digitalthjarta-se/codescene_mcp_hooks/main/install.sh | bash -s -- --agents claude,codex
+```
+
+`--agents claude,copilot,codex,cursor,vscode`, `--skip-mcp`, `--skip-agents-md`, `--dry-run`, and an optional repo path. Without a terminal and without `--agents`, it uses the agents it found. Piped from curl, it downloads this repo's templates from `main` (set `CODESCENE_HOOKS_REF` to use a tag or branch). From a clone, `./install.sh` uses the files next to it.
+
+Requirements: `bash`, `git`, `curl`, `jq` (built into macOS 15+, else `brew install jq`), `cs`, and Node.js 18+ for the MCP server.
 
 ## Install the CodeScene MCP server
 
@@ -187,7 +195,7 @@ If `cs` or `jq` is missing, or `cs` can't sign in, the hook prints "gate skipped
 ## Testing the script
 
 ```bash
-bash test/run-tests.sh   # fake cs, no account needed: 16 cases, every agent mode
+bash test/run-tests.sh   # fake cs, no account needed: every agent mode, plus install.sh in a temp repo
 ```
 
 ## Files
@@ -195,7 +203,7 @@ bash test/run-tests.sh   # fake cs, no account needed: 16 cases, every agent mod
 ```
 .agents/hooks/code-health-gate.sh      the gate (copied into each repo)
 AGENTS.md                              agent instructions (copied or appended)
-install.sh                             adds all of the below to a repo
+install.sh                             adds all of the below to a repo (curl | bash, or from a clone)
 templates/                             per-agent hook and MCP configs, Copilot setup workflow
 cloud/                                 Claude cloud setup script, Copilot cloud agent MCP config
 plugin/ + .claude-plugin/              Claude Code plugin and marketplace
