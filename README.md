@@ -38,6 +38,26 @@ git add -A && git commit -m "Add CodeScene Code Health gate"
 #    make a function worse, ask the agent to finish, watch it get sent back.
 ```
 
+**Windows (PowerShell 5.1 or 7+):** same flow, with `install.ps1`:
+
+```powershell
+# 1. Once per machine: the CodeScene CLI (see "Install the cs CLI"), then sign in
+cs auth login
+
+# 2. Once per repo
+cd C:\src\my-repo
+irm https://raw.githubusercontent.com/digitalthjarta-se/codescene_mcp_hooks/main/install.ps1 | iex
+git add -A; git commit -m "Add CodeScene Code Health gate"
+```
+
+Options need the script block form (`-Agents`, `-SkipMcp`, `-SkipAgentsMd`, `-DryRun`, `-Repo`):
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/digitalthjarta-se/codescene_mcp_hooks/main/install.ps1))) -Agents claude,codex
+```
+
+From a clone, run `.\install.ps1` (if scripts are blocked: `powershell -ExecutionPolicy Bypass -File .\install.ps1`). It does the same as `install.sh` and needs no `jq` to install. The gate itself is a bash script, so Windows also needs Git for Windows (Git Bash) and `jq` (`winget install jqlang.jq`) on `PATH`; the installer warns if `bash`, `jq` or `cs` is missing. `install.ps1` has not been run on a real Windows machine yet.
+
 `install.sh` installs into the git repository you run it from (any subfolder works). It lists the agents and preselects the ones it finds in the repo (`.claude/`, `.cursor/`, ...) or on your `PATH`; type numbers to toggle, Enter to install. It never overwrites: it merges into existing `.claude/settings.json`, `.mcp.json` and friends, appends a marked section to an existing `AGENTS.md`, and skips JSON files with comments (it tells you which). Run it again to update the gate script.
 
 Options go after `bash -s --`, for example to skip the question in a script or CI:
@@ -48,7 +68,7 @@ curl -fsSL https://raw.githubusercontent.com/digitalthjarta-se/codescene_mcp_hoo
 
 `--agents claude,copilot,codex,cursor,vscode`, `--skip-mcp`, `--skip-agents-md`, `--dry-run`, and an optional repo path. Without a terminal and without `--agents`, it uses the agents it found. Piped from curl, it downloads this repo's templates from `main` (set `CODESCENE_HOOKS_REF` to use a tag or branch). From a clone, `./install.sh` uses the files next to it.
 
-Requirements: `bash`, `git`, `curl`, `jq` (built into macOS 15+, else `brew install jq`), `cs`, and Node.js 18+ for the MCP server.
+Requirements (`install.sh`): `bash`, `git`, `curl`, `jq` (built into macOS 15+, else `brew install jq`), `cs`, and Node.js 18+ for the MCP server.
 
 ## Install the CodeScene MCP server
 
@@ -88,7 +108,7 @@ Invoke-WebRequest -Uri 'https://downloads.codescene.io/enterprise/cli/install-cs
 
 The installer needs `curl` and `unzip` and downloads from `downloads.codescene.io` and `devtools.codescene.io`. Check with `cs version`. The hook adds `~/.local/bin` to its own PATH, so it finds `cs` even when the agent was started from the Dock or Start menu.
 
-Windows: the hook is a bash script. It runs where the agent runs hooks through bash (Git Bash for Claude Code, WSL). Copilot's `powershell` hook key isn't provided.
+Windows: the hook is a bash script (install Git for Windows and `jq`). It runs where the agent runs hooks through bash (Git Bash for Claude Code, WSL). Copilot's `powershell` hook key isn't provided.
 
 ## Authentication: recommendations
 
@@ -204,6 +224,7 @@ bash test/run-tests.sh   # fake cs, no account needed: every agent mode, plus in
 .agents/hooks/code-health-gate.sh      the gate (copied into each repo)
 AGENTS.md                              agent instructions (copied or appended)
 install.sh                             adds all of the below to a repo (curl | bash, or from a clone)
+install.ps1                            same for PowerShell (irm | iex, or from a clone)
 templates/                             per-agent hook and MCP configs, Copilot setup workflow
 cloud/                                 Claude cloud setup script, Copilot cloud agent MCP config
 plugin/ + .claude-plugin/              Claude Code plugin and marketplace
